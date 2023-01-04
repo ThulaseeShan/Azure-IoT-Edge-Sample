@@ -19,8 +19,7 @@
         
         <script async defer>
 
-            var jsonStr = '{"created":"2022-12-31T23:25:31.866424","id":"","iteration":"","predictions":[{"boundingBox":{"height":0.48456652,"left":0.09034857,"top":0.30461316,"width":0.37478041},"probability":0.97188151,"tagId":2,"tagName":"orange"},{"boundingBox":{"height":0.39746084,"left":0.55427757,"top":0.27529544,"width":0.29269173},"probability":0.96602219,"tagId":0,"tagName":"apple"}],"project":""}';
-            var datObj = JSON.parse(jsonStr);
+            var datObj;
             var imgWidth = 0;
             var imgHeight = 0;
 
@@ -51,7 +50,7 @@
 
                     $.ajax( {
                         data : $('#fileName')[0].files[0],
-                        url : 'http://172.18.0.4:80/image',
+                        url : $("#edgeUrl").val(),
                         type : 'post',
                         contentType: 'application/octet-stream',
                         dataType: 'json',
@@ -81,12 +80,12 @@
 
                     $.ajax( {
                         data : $('#fileName')[0].files[0],
-                        url : 'https://southeastasia.api.cognitive.microsoft.com/customvision/v3.0/Prediction/2d8bf48d-f01d-4712-96e7-601118b576a0/detect/iterations/Iteration3/image',
+                        url : $("#cloudUrl").val(),
                         type : 'post',
                         contentType: 'application/octet-stream',
                         dataType: 'json',
                         headers: {
-                            "Prediction-Key": "98bcc515f5e642379edea907602f8d4a"
+                            "Prediction-Key": $("#predictionKey").val()
                         },                        
                         processData: false,
                         success:onCloudSuccess,
@@ -150,9 +149,13 @@
     </tr>
     <tr>
     <td>
+        URL: <input id="edgeUrl" style="width:50%"/><br/>
+        Prediction-Key: <i>Not required</i>
         <canvas id="edgeCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
     </td>
     <td>
+        URL: <input id="cloudUrl" style="width:50%"/><br/>
+        Prediction-Key: <input id="predictionKey" style="width:41%"/>
         <canvas id="cloudCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
     </td>
     </tr>
