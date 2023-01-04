@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Test Fruit Detection</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        
+        <script async defer>
+
+            var jsonStr = '{"created":"2022-12-31T23:25:31.866424","id":"","iteration":"","predictions":[{"boundingBox":{"height":0.48456652,"left":0.09034857,"top":0.30461316,"width":0.37478041},"probability":0.97188151,"tagId":2,"tagName":"orange"},{"boundingBox":{"height":0.39746084,"left":0.55427757,"top":0.27529544,"width":0.29269173},"probability":0.96602219,"tagId":0,"tagName":"apple"}],"project":""}';
+            var datObj = JSON.parse(jsonStr);
+            var imgWidth = 0;
+            var imgHeight = 0;
+
+            function uploadImage(){
+                var fReader = new FileReader();
+                fReader.readAsDataURL($('#fileName')[0].files[0]);
+                
+                fReader.onloadend = function(event){
+                    var img = $('#sourceImg')
+                    img.show();
+                    img.attr('src', event.target.result);
+                    
+
+                    uploadImageToEdge(img);
+                    uploadImageToCloud(img);
+
+                    window.setTimeout(function(){ img.hide()}, 50);
+                }
+            }
+
+            function uploadImageToEdge(img) {
+                window.setTimeout(function() {
+                    var ctx = $("#edgeCanvas")[0].getContext("2d");
+      	            ctx.clearRect(0, 0, $("#edgeCanvas")[0].width, $("#edgeCanvas")[0].height);
+                    drawImage(ctx, img);
+                    imgWidth = img.width();
+                    imgHeight = img.height();
+
+                    $.ajax( {
+                        data : $('#fileName')[0].files[0],
+                        url : 'http://172.18.0.4:80/image',
+                        type : 'post',
+                        contentType: 'application/octet-stream',
+                        dataType: 'json',
+                        processData: false,
+                        success:onEdgeSuccess,
+                        error: onEdgeError 
+                    });
+
+                    function onEdgeSuccess ( data, status, jqXhr ){
+                        //$("#srvData").html(JSON.stringify(data) + "<br /><hr /><br />" + status);
+                        drawBoxes(ctx, data, img);
+                    }
+
+                    function onEdgeError ( jqXhr, status, errorMessage ){
+                        $("#srvData").html(errorMessage + "<br /><hr /><br />" + status);
+                    }
+                }, 20);
+            }
+
+            function uploadImageToCloud(img) {
+                window.setTimeout(function() {
+                    var ctx = $("#cloudCanvas")[0].getContext("2d");
+      	            ctx.clearRect(0, 0, $("#cloudCanvas")[0].width, $("#cloudCanvas")[0].height);
+                    drawImage(ctx, img);
+                    imgWidth = img.width();
+                    imgHeight = img.height();
+
+                    $.ajax( {
+                        data : $('#fileName')[0].files[0],
+                        url : 'https://southeastasia.api.cognitive.microsoft.com/customvision/v3.0/Prediction/2d8bf48d-f01d-4712-96e7-601118b576a0/detect/iterations/Iteration3/image',
+                        type : 'post',
+                        contentType: 'application/octet-stream',
+                        dataType: 'json',
+                        headers: {
+                            "Prediction-Key": "98bcc515f5e642379edea907602f8d4a"
+                        },                        
+                        processData: false,
+                        success:onCloudSuccess,
+                        error: onCloudError 
+                    });
+
+                    function onCloudSuccess ( data, status, jqXhr ){
+                        //$("#srvData").html(JSON.stringify(data) + "<br /><hr /><br />" + status);
+                        drawBoxes(ctx, data, img);
+                    }
+
+                    function onCloudError ( jqXhr, status, errorMessage ){
+                        $("#srvData").html(errorMessage + "<br /><hr /><br />" + status);
+                    }
+                },20);
+            }
+
+            
+            function drawImage(ctx, img, left, top, right, bottom){
+                ctx.drawImage(img[0], 0, 0, img.width(), img.height());
+            }
+
+            function drawBoxes(ctx, obj){
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 2;
+                ctx.font = "15px Georgia";
+
+                obj.predictions.forEach(prediction => {
+
+                    if(prediction.probability > 0.6){
+                        ctx.strokeRect(prediction.boundingBox.left * imgWidth, 
+                            prediction.boundingBox.top * imgHeight, 
+                            prediction.boundingBox.width * imgWidth, 
+                            prediction.boundingBox.height * imgHeight);
+
+                        size = ctx.measureText(prediction.tagName);
+                        ctx.fillStyle = "red";
+                        ctx.fillRect(prediction.boundingBox.left * imgWidth, 
+                            (prediction.boundingBox.top * imgHeight)-20, 
+                            size.width+8, 
+                            20);
+                        ctx.fillStyle = "white";
+                        ctx.fillText(prediction.tagName, 
+                            (prediction.boundingBox.left * imgWidth)+2, 
+                            (prediction.boundingBox.top * imgHeight)-6);
+                    }
+                });
+            }
+        </script>
+
+    <table style="border-collapse: collapse; width: 100%;" border="0">
+    <tbody>
+    <tr>
+    <td>
+        Upload image: <input type="file" id="fileName" /> <button id="uploadFile" onclick="uploadImage();">Go</button>
+    </td>
+    <td>
+        <img id="sourceImg" width="70%"  />
+        <div id="srvData"></div>
+    </td>
+    </tr>
+    <tr>
+    <td>
+        <canvas id="edgeCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
+    </td>
+    <td>
+        <canvas id="cloudCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
+    </td>
+    </tr>
+    </tbody>
+    </table>
+
+    </body>
+</html>
