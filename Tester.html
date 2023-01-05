@@ -163,20 +163,34 @@
         </td>
         </tr>
         <tr>
+            <td>
+                <h2>Edge</h2>
+                URL: <input id="edgeUrl" style="width:50%"/><br/>
+                Prediction-Key: <i>Not required</i>
+            </td>
+            <td>
+                <h2>Cloud</h2>
+                URL: <input id="cloudUrl" style="width:50%"/><br/>
+                Prediction-Key: <input id="predictionKey" style="width:41%"/>
+            </td>
+        </tr>
+        <tr>
         <td>
-            URL: <input id="edgeUrl" style="width:50%"/><br/>
-            Prediction-Key: <i>Not required</i>
             <canvas id="edgeCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
+        </td>
+        <td>
+            <canvas id="cloudCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
+        </td>
+        </tr>
+        <tr>
+        <td>
             <div id="edgeStatus"></div>
         </td>
         <td>
-            URL: <input id="cloudUrl" style="width:50%"/><br/>
-            Prediction-Key: <input id="predictionKey" style="width:41%"/>
-            <canvas id="cloudCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
             <div id="cloudStatus"></div>
         </td>
         </tr>
-        </tbody>
+    </tbody>
         </table>
 
     </body>
