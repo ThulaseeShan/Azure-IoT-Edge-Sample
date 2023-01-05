@@ -11,6 +11,17 @@
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+        <style>
+            div.error
+            {
+                color: red;
+            }
+
+            div.success
+            {
+                color: darkgreen;
+            }
+        </style>
     </head>
     <body>
         <!--[if lt IE 7]>
@@ -22,6 +33,8 @@
             var datObj;
             var imgWidth = 0;
             var imgHeight = 0;
+            var startEdgeTime = new Date();
+            var startCloudTime = new Date();
 
             function uploadImage(){
                 var fReader = new FileReader();
@@ -32,7 +45,6 @@
                     img.show();
                     img.attr('src', event.target.result);
                     
-
                     uploadImageToEdge(img);
                     uploadImageToCloud(img);
 
@@ -48,6 +60,7 @@
                     imgWidth = img.width();
                     imgHeight = img.height();
 
+                    startEdgeTime = new Date();
                     $.ajax( {
                         data : $('#fileName')[0].files[0],
                         url : $("#edgeUrl").val(),
@@ -55,18 +68,19 @@
                         contentType: 'application/octet-stream',
                         dataType: 'json',
                         processData: false,
-                        success:onEdgeSuccess,
-                        error: onEdgeError 
-                    });
+                        success:onEdgeSuccess
+                    }).always(function(jqXHR, textStatus) {
+                        if (textStatus != "success") {
+                            $("#edgeStatus").html("<b>Error!</b>" + "<br /><hr /><br />" + jqXHR.statusText).removeClass("success").addClass("error");
+                        }
+                    });;
 
                     function onEdgeSuccess ( data, status, jqXhr ){
-                        //$("#srvData").html(JSON.stringify(data) + "<br /><hr /><br />" + status);
+                        var endTime = new Date();
                         drawBoxes(ctx, data, img);
+                        $("#edgeStatus").html("Success!" + "<br /><hr /><br />Total time elapsed" + (endTime - startEdgeTime) + "ms").addClass("success").removeClass("error");
                     }
 
-                    function onEdgeError ( jqXhr, status, errorMessage ){
-                        $("#srvData").html(errorMessage + "<br /><hr /><br />" + status);
-                    }
                 }, 20);
             }
 
@@ -78,6 +92,7 @@
                     imgWidth = img.width();
                     imgHeight = img.height();
 
+                    startCloudTime = new Date();
                     $.ajax( {
                         data : $('#fileName')[0].files[0],
                         url : $("#cloudUrl").val(),
@@ -88,17 +103,17 @@
                             "Prediction-Key": $("#predictionKey").val()
                         },                        
                         processData: false,
-                        success:onCloudSuccess,
-                        error: onCloudError 
-                    });
+                        success:onCloudSuccess
+                    }).always(function(jqXHR, textStatus) {
+                        if (textStatus != "success") {
+                            $("#cloudStatus").html("Error!" + "<br /><hr /><br />" + jqXHR.statusText).removeClass("success").addClass("error");
+                        }
+                    });;;
 
                     function onCloudSuccess ( data, status, jqXhr ){
-                        //$("#srvData").html(JSON.stringify(data) + "<br /><hr /><br />" + status);
+                        var endTime = new Date();
                         drawBoxes(ctx, data, img);
-                    }
-
-                    function onCloudError ( jqXhr, status, errorMessage ){
-                        $("#srvData").html(errorMessage + "<br /><hr /><br />" + status);
+                        $("#cloudStatus").html("Success!" + "<br /><hr /><br />Total time elapsed" + (endTime - startCloudTime) + "ms").addClass("success").removeClass("error");
                     }
                 },20);
             }
@@ -136,31 +151,33 @@
             }
         </script>
 
-    <table style="border-collapse: collapse; width: 100%;" border="0">
-    <tbody>
-    <tr>
-    <td>
-        Upload image: <input type="file" id="fileName" /> <button id="uploadFile" onclick="uploadImage();">Go</button>
-    </td>
-    <td>
-        <img id="sourceImg" width="70%"  />
-        <div id="srvData"></div>
-    </td>
-    </tr>
-    <tr>
-    <td>
-        URL: <input id="edgeUrl" style="width:50%"/><br/>
-        Prediction-Key: <i>Not required</i>
-        <canvas id="edgeCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
-    </td>
-    <td>
-        URL: <input id="cloudUrl" style="width:50%"/><br/>
-        Prediction-Key: <input id="predictionKey" style="width:41%"/>
-        <canvas id="cloudCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
-    </td>
-    </tr>
-    </tbody>
-    </table>
+        <h1>Fruit Detection Tester</h1>
+        <table style="border-collapse: collapse; width: 100%;" border="0">
+        <tbody>
+        <tr>
+        <td>
+            Upload image: <input type="file" id="fileName" /> <button id="uploadFile" onclick="uploadImage();">Go</button>
+        </td>
+        <td>
+            <img id="sourceImg" width="70%"  />
+        </td>
+        </tr>
+        <tr>
+        <td>
+            URL: <input id="edgeUrl" style="width:50%"/><br/>
+            Prediction-Key: <i>Not required</i>
+            <canvas id="edgeCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
+            <div id="edgeStatus"></div>
+        </td>
+        <td>
+            URL: <input id="cloudUrl" style="width:50%"/><br/>
+            Prediction-Key: <input id="predictionKey" style="width:41%"/>
+            <canvas id="cloudCanvas"  width="500"  height="500" style="border: 1px solid black;"></canvas>
+            <div id="cloudStatus"></div>
+        </td>
+        </tr>
+        </tbody>
+        </table>
 
     </body>
 </html>
